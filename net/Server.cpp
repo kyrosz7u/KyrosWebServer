@@ -24,9 +24,11 @@ Server::Server(int port, int work_nums){
     sockaddr_in addr;
     bzero(&addr,sizeof addr);
     addr.sin_family=AF_INET;
-    //本机任意网卡
+
+    //INADDR_ANY设置为本机任意网卡的地址
+    //htons：uint16_t主机端转网络端    htonl：uint32_t主机端转网络端
     addr.sin_addr.s_addr=htonl(INADDR_ANY);
-    addr.sin_port=port;
+    addr.sin_port=htons(port);
 
     int ret=bind(m_listenfd,(sockaddr*)&addr,sizeof addr);
     assert(ret==0);
@@ -37,23 +39,24 @@ Server::Server(int port, int work_nums){
     //客户端将收到ECONNREFUSED错误信息。
     listen(m_listenfd,LISTEN_BACKLOG);
 
+    LOG_DEBUG("Port %d Listening\n",port);
+
     epoll_event ev;
     ev.data.fd=m_listenfd;
     ev.events=EPOLLIN|EPOLLRDHUP;
-
     epoll_ctl(m_epollfd, EPOLL_CTL_ADD, m_listenfd, &ev);
-//    epoll_add(m_epollfd, m_listenfd);
-//    epoll_ctl(m_epollfd,,m_listenfd);
 
-    std::cout << "ServerINIT<<endl";
     m_threadpool = new ThreadPool(work_nums);
-    LOG_DEBUG("ServerINIT");
-    std::cout << "ServerINIT<<endl";
+    m_threadpool->Start();
+    LOG_DEBUG("ServerStarted\n");
 
 }
 
 Server::~Server(){
-
+    m_threadpool->Stop();
+    close(m_listenfd);
+    close(m_epollfd);
+    delete m_threadpool;
 }
 
 void Server::setReadCallBack(ConnCallBackFunc &&fb){
@@ -65,30 +68,33 @@ void Server::setWriteCallBack(ConnCallBackFunc &&fb){
 }
 
 void Server::handleRead(int connfd) {
+    LOG_DEBUG("connfd:%d    handleRead\n",connfd);
     int ret = connMap[connfd]->readBuffer();
     if(ret<=0){
         CloseConn(connfd);
         return ;
     }
-
+    LOG_DEBUG("readBuffer:%s\n",connMap[connfd]->m_rBuffer);
     if(rCallBack){
         rCallBack(connMap[connfd]);
     }
     epoll_mod(m_epollfd, connfd, EPOLLOUT);
-    epoll_mod(m_epollfd, connfd, EPOLLIN);
+
 
 }
 
 void Server::handleWrite(int connfd) {
+    LOG_DEBUG("connfd:%d    handleWrite\n",connfd);
     int ret = connMap[connfd]->writeBuffer();
     if(ret==-1){
         CloseConn(connfd);
         return ;
     }
+    LOG_DEBUG("writeBuffer:%s\n",connMap[connfd]->m_wBuffer);
     if(wCallBack){
         wCallBack(connMap[connfd]);
     }
-
+    epoll_mod(m_epollfd, connfd, EPOLLIN);
 }
 
 void Server::handleErr(int connfd) {
@@ -102,6 +108,7 @@ void Server::CloseConn(int connfd) {
     epoll_ctl(m_epollfd, EPOLL_CTL_DEL, connfd, 0);
     connMap.erase(connfd);
     map_lock.Unlock();
+    LOG_DEBUG("connfd:%d    Closed\n",connfd);
 }
 
 [[noreturn]] void Server::EventLoop() {
@@ -109,7 +116,7 @@ void Server::CloseConn(int connfd) {
     while(1){
         //-1表示一直阻塞到有事件到达
         ep_nums=epoll_wait(m_epollfd,m_event,MAX_EVENT_NUM,-1);
-        LOG_DEBUG("epoll_wakeup");
+        LOG_DEBUG("epoll_wakeup\n");
         for(int i=0;i<ep_nums;i++){
             if(m_event[i].data.fd==m_listenfd){
                 sockaddr_in client_addr;
@@ -127,10 +134,13 @@ void Server::CloseConn(int connfd) {
             else{
                 int connfd = m_event[i].data.fd;
                 if(m_event[i].events&EPOLLIN){
+                    LOG_DEBUG("epoll connfd:%d    Read\n",connfd);
                     m_threadpool->AddTask(std::bind(&Server::handleRead,this,connfd));
                 }else if(m_event[i].events&EPOLLOUT){
+                    LOG_DEBUG("epoll connfd:%d    Write\n",connfd);
                     m_threadpool->AddTask(std::bind(&Server::handleWrite,this,connfd));
                 }else if(m_event[i].events&EPOLLERR){
+                    LOG_DEBUG("epoll connfd:%d    Err\n",connfd);
                     m_threadpool->AddTask(std::bind(&Server::handleErr,this,connfd));
                 }else{}
             }
@@ -162,13 +172,13 @@ void epoll_add(int epfd, int fd){
 }
 
 //将事件重置为EPOLLONESHOT
-void epoll_mod(int epollfd, int fd, int ev)
+void epoll_mod(int epfd, int fd, int ev)
 {
     epoll_event event;
     event.data.fd = fd;
     event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
 
-    epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
+    epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &event);
 }
 
 }//namespace net

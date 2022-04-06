@@ -6,10 +6,10 @@
 using namespace std;
 #include <cstdio>
 
-#define LOG_DEBUG(format, ...) printf(format, ##__VA_ARGS__)
-#define LOG_INFO(format, ...) printf(format, ##__VA_ARGS__)
-#define LOG_WARN(format, ...) printf(format, ##__VA_ARGS__)
-#define LOG_ERROR(format, ...) printf(format, ##__VA_ARGS__)
+#define LOG_DEBUG(format, ...) printf(format, ##__VA_ARGS__); fflush(stdout)
+#define LOG_INFO(format, ...) printf(format, ##__VA_ARGS__); fflush(stdout)
+#define LOG_WARN(format, ...) printf(format, ##__VA_ARGS__); fflush(stdout)
+#define LOG_ERROR(format, ...) printf(format, ##__VA_ARGS__); fflush(stdout);
 
 // fwrite()是原子操作
 // 需要一个用户态的buffer 保存log的文本内容，并且一次性的刷入fd

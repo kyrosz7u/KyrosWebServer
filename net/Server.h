@@ -51,7 +51,7 @@ private:
 };
 
 void epoll_add(int epfd, int fd);
-void epoll_mod(int epollfd, int fd, int ev);
+void epoll_mod(int epfd, int fd, int ev);
 
 }
 
