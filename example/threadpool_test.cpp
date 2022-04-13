@@ -4,12 +4,13 @@
 
 #include <iostream>
 #include <unistd.h>
-#include "Mutex.h"
-#include "Condition.h"
-#include "Thread.h"
-#include "ThreadPool.h"
+#include "base/Mutex.h"
+#include "base/Condition.h"
+#include "base/Thread.h"
+#include "base/ThreadPool.h"
 
 using namespace std;
+using namespace base;
 
 Mutex taskLock;
 
@@ -27,7 +28,7 @@ void task(){
 int main(){
     ThreadPool threads(5);
 
-    threads.Start();
+
 
 //    cout<<&threads<<endl;
 //    cout<<threads.isRunning<<endl;
@@ -36,6 +37,8 @@ int main(){
         threads.AddTask(task);
         sleep(1);
     }
+
+    threads.Start();
 
     return 0;
 }

@@ -2,7 +2,7 @@
 // Created by 樱吹雪 on 2022/4/5.
 //
 #include <iostream>
-#include "base/logger.h"
+#include "base/LogStream.h"
 #include "net/Server.h"
 
 using namespace std;

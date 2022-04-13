@@ -3,7 +3,7 @@
 //
 
 #ifndef KYROSWEBSERVER_THREADPOOL_H
-#define KYROSWEBSERVERE_THREADPOOL_H
+#define KYROSWEBSERVER_THREADPOOL_H
 
 #include "Thread.h"
 #include "Condition.h"
@@ -31,12 +31,11 @@ public:
 
     void AddTask(ThreadTask &&t);
 
-    ThreadTask take();
-
-    void runInThread();
-
     bool isRunning = false;
 private:
+    ThreadTask take();
+    void runInThread();
+
     int workers;
     int qSize;
     Mutex mMutex;

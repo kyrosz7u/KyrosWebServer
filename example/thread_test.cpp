@@ -3,13 +3,14 @@
 //
 #include <iostream>
 #include <unistd.h>
-#include "Mutex.h"
-#include "Condition.h"
-#include "Thread.h"
+#include "base/Mutex.h"
+#include "base/Condition.h"
+#include "base/Thread.h"
 
 #define BUFFER_SIZE 100
 
 using namespace std;
+using namespace base;
 
 Mutex mutex;
 Condition isFull(mutex);
@@ -18,7 +19,7 @@ Condition isEmpty(mutex);
 int buffer=0;
 void ProducerThread(){
     while(1){
-        mutex.lock();
+        mutex.Lock();
         usleep(150000);
         while(buffer>=BUFFER_SIZE){
             isFull.wait();
@@ -34,14 +35,14 @@ void ProducerThread(){
         }
         cout<<"Producer:"<<CurrentThread::getStr()<<" "<<buffer<<endl;
 
-        mutex.unlock();
+        mutex.Unlock();
     }
     return ;
 }
 
 void ConsumerThread(){
     while (1){
-        mutex.lock();
+        mutex.Lock();
         usleep(700000);
         while(buffer<=0){
             isEmpty.wait();
@@ -56,7 +57,7 @@ void ConsumerThread(){
             throw "error:buffer<0";
         }
         cout<<"Consumer:"<<CurrentThread::getStr()<<" "<<buffer<<endl;
-        mutex.unlock();
+        mutex.Unlock();
     }
     return ;
 }

@@ -4,7 +4,7 @@
 
 #include "Server.h"
 #include "Connection.h"
-#include "base/logger.h"
+#include "base/Logger.h"
 #include <string.h>
 #include <assert.h>
 #include <fcntl.h>
@@ -39,7 +39,7 @@ Server::Server(int port, int work_nums){
     //客户端将收到ECONNREFUSED错误信息。
     listen(m_listenfd,LISTEN_BACKLOG);
 
-    LOG_DEBUG("Port %d Listening\n",port);
+    LOG_INFO<<"Port"<<port<<"Listening...";
 
     epoll_event ev;
     ev.data.fd=m_listenfd;
@@ -48,7 +48,6 @@ Server::Server(int port, int work_nums){
 
     m_threadpool = new ThreadPool(work_nums);
     m_threadpool->Start();
-    LOG_DEBUG("ServerStarted\n");
 
 }
 
@@ -68,13 +67,13 @@ void Server::setWriteCallBack(ConnCallBackFunc &&fb){
 }
 
 void Server::handleRead(int connfd) {
-    LOG_DEBUG("connfd:%d    handleRead\n",connfd);
+    LOG_DEBUG<<"connfd:"<<connfd<<"handleRead";
     int ret = connMap[connfd]->readBuffer();
     if(ret<=0){
         CloseConn(connfd);
         return ;
     }
-    LOG_DEBUG("readBuffer:%s\n",connMap[connfd]->m_rBuffer);
+    LOG_DEBUG<<"readBuffer:"<<connMap[connfd]->m_rBuffer;
     if(rCallBack){
         rCallBack(connMap[connfd]);
     }
@@ -84,13 +83,13 @@ void Server::handleRead(int connfd) {
 }
 
 void Server::handleWrite(int connfd) {
-    LOG_DEBUG("connfd:%d    handleWrite\n",connfd);
+    LOG_DEBUG<<"connfd:"<<connfd<<"handleWrite";
     int ret = connMap[connfd]->writeBuffer();
     if(ret==-1){
         CloseConn(connfd);
         return ;
     }
-    LOG_DEBUG("writeBuffer:%s\n",connMap[connfd]->m_wBuffer);
+    LOG_DEBUG<<"writeBuffer:"<<connMap[connfd]->m_rBuffer;
     if(wCallBack){
         wCallBack(connMap[connfd]);
     }
@@ -108,7 +107,7 @@ void Server::CloseConn(int connfd) {
     epoll_ctl(m_epollfd, EPOLL_CTL_DEL, connfd, 0);
     connMap.erase(connfd);
     map_lock.Unlock();
-    LOG_DEBUG("connfd:%d    Closed\n",connfd);
+    LOG_TRACE<<"connfd:"<<connfd<<"Closed";
 }
 
 [[noreturn]] void Server::EventLoop() {
@@ -116,7 +115,7 @@ void Server::CloseConn(int connfd) {
     while(1){
         //-1表示一直阻塞到有事件到达
         ep_nums=epoll_wait(m_epollfd,m_event,MAX_EVENT_NUM,-1);
-        LOG_DEBUG("epoll_wakeup\n");
+        LOG_TRACE<<"epoll_wakeup";
         for(int i=0;i<ep_nums;i++){
             if(m_event[i].data.fd==m_listenfd){
                 sockaddr_in client_addr;
@@ -134,13 +133,13 @@ void Server::CloseConn(int connfd) {
             else{
                 int connfd = m_event[i].data.fd;
                 if(m_event[i].events&EPOLLIN){
-                    LOG_DEBUG("epoll connfd:%d    Read\n",connfd);
+                    LOG_TRACE<<"epoll connfd:"<<connfd<<"Read";
                     m_threadpool->AddTask(std::bind(&Server::handleRead,this,connfd));
                 }else if(m_event[i].events&EPOLLOUT){
-                    LOG_DEBUG("epoll connfd:%d    Write\n",connfd);
+                    LOG_TRACE<<"epoll connfd:"<<connfd<<"Write";
                     m_threadpool->AddTask(std::bind(&Server::handleWrite,this,connfd));
                 }else if(m_event[i].events&EPOLLERR){
-                    LOG_DEBUG("epoll connfd:%d    Err\n",connfd);
+                    LOG_TRACE<<"epoll connfd:"<<connfd<<"Err";
                     m_threadpool->AddTask(std::bind(&Server::handleErr,this,connfd));
                 }else{}
             }

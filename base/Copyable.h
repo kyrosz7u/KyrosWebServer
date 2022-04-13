@@ -1,20 +1,11 @@
 //
 // Created by 樱吹雪 on 2022/2/2.
 //
-
-#ifndef LINUX_SYS_UTILS_H
-#define LINUX_SYS_UTILS_H
-
-//C++ STL
-#include <vector>
-#include <map>
-#include <string>
+#ifndef KYROSWEBSERVER_COPYABLE_H
+#define KYROSWEBSERVER_COPYABLE_H
 
 //类型库
 #include <stdint.h>
-
-
-
 /**
 "《C++ Primer 第5版》15.7.2 合成拷贝控制与继承" 这一章节里有如下内容：
 如果基类中的默认构造函数、拷贝构造函数、拷贝赋值运算符或析构函数是被删除的函数或者不可访问，
@@ -29,7 +20,6 @@ protected:
     copyable() {}
     ~copyable() {}
 };
-
 
 class noncopyable{
 protected:
@@ -47,4 +37,4 @@ private:  // emphasize the following members are private
 
 
 
-#endif //LINUX_SYS_UTILS_H
+#endif
