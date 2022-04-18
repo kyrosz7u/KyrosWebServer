@@ -32,9 +32,11 @@ public:
     ~Server();
 
     [[noreturn]] void EventLoop();
+    void setConnectedCallBack(ConnCallBackFunc &&fb);
     void setReadCallBack(ConnCallBackFunc &&fb);
     void setWriteCallBack(ConnCallBackFunc &&fb);
 private:
+    void handleConnected(int connfd);
     void handleRead(int connfd);
     void handleWrite(int connfd);
     void handleErr(int connfd);

@@ -58,12 +58,20 @@ Server::~Server(){
     delete mThreadpool;
 }
 
+
+
 void Server::setReadCallBack(ConnCallBackFunc &&fb){
     rCallBack=std::move(fb);
 }
 
 void Server::setWriteCallBack(ConnCallBackFunc &&fb){
     wCallBack=std::move(fb);
+}
+
+void Server::handleConnected(int connfd) {
+    mapLock.Lock();
+    connMap[connfd] = std::move(shared_ptr<Connection>(new Connection(connfd)));
+    mapLock.Unlock();
 }
 
 void Server::handleRead(int connfd) {
@@ -121,9 +129,7 @@ void Server::CloseConn(int connfd) {
                 addr_len = sizeof client_addr;
                 int connfd=accept(mListenfd, (sockaddr*)&client_addr, &addr_len);
                 epoll_add(mEpollfd, connfd);
-                mapLock.Lock();
-                connMap[connfd] = std::move(shared_ptr<Connection>(new Connection(connfd)));
-                mapLock.Unlock();
+
             //出错或者连接被远程关闭，直接释放本地的Connection对象
             }else if (epollEvent[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
                 CloseConn(epollEvent[i].data.fd);
