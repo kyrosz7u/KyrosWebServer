@@ -7,6 +7,7 @@
 
 #include "net/Server.h"
 #include <string>
+#include <map>
 
 using namespace std;
 
@@ -58,6 +59,7 @@ class HttpServer {
         unsigned int mCheckPtr;
         CHECK_STATE mCheckState;
     };
+    typedef shared_ptr<httpConnection> HttpConnPtr;
 public:
     //HttpServer默认起4个工作线程
     HttpServer(int port)
@@ -66,7 +68,7 @@ public:
     HttpServer(int port, int work_nums)
             : mPort(port),
             mServer(port,work_nums){}
-    void Listen(){mServer.EventLoop()};
+    void Listen(){mServer.EventLoop();}
     void HandleReadandWrite();
     LINE_STATE parse_line(char* text);
     HTTP_CODE parse_request(char* text);
@@ -74,7 +76,7 @@ public:
 private:
     Server mServer;
     const int mPort;
-
+    map<int,HttpConnPtr> mHttpConnMap;
 };
 
 
