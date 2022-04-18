@@ -8,7 +8,7 @@
 // fwrite()是原子操作
 // 需要一个用户态的buffer 保存log的文本内容，并且一次性的刷入fd
 // LOGGER数据流：logPacked->logstream->buffer->fwrite
-// 需要构建的类是：Logger LogStream FixedBuffer
+// 需要构建的类是：Logger LogStream Buffer
 
 #define LOG_TRACE if (base::Logger::logLevel() <= base::Logger::TRACE) \
             base::Logger(__FILE__, __LINE__, base::Logger::TRACE, __func__).stream()

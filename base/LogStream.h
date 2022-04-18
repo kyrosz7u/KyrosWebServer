@@ -2,51 +2,15 @@
 #define KYROSWEBSERVER_LOGSTREAM_H
 
 #include "Copyable.h"
+#include "Buffer.h"
 #include <cstring>  //memcpy
 #include <functional>
+#include <memory>
 
 using namespace std;
 
 namespace base{
 
-class FixedBuffer{
-public:
-    FixedBuffer()
-    {
-        bufptr=_buffer;
-        end = bufptr + sizeof _buffer;
-    }
-    void append(const char *str, size_t len)
-    {
-        if(static_cast<size_t>(end-bufptr)>len){
-            memcpy(bufptr,str,len);
-        }
-        bufptr+=len;
-    }
-    int length() { return static_cast<int>(bufptr-_buffer);}
-    int avail() {return static_cast<int>(end-bufptr);}
-    int add(int len){
-        if(len>avail())
-            return -1;
-        else{
-            bufptr+=len;
-            return length();
-        }
-    }
-
-    void clear(){
-        memset(_buffer,0,end-_buffer);
-        reset();
-    }
-    void reset() {bufptr=_buffer;}
-
-private:
-    friend class LogStream;
-    static const int kBufferSize=1023;
-    char _buffer[kBufferSize+1];    //最后需要写入一个换行符，详见~LogStream()
-    char* bufptr;
-    char* end;
-};
 
 class LogStream: public noncopyable{
 public:
@@ -111,6 +75,9 @@ public:
 private:
     template<typename T> void formatInteger(T);
     static const int kMaxNumericSize = 32;
+    //使用unique_ptr的原因：
+    // 1、避免直接调用构造函数生成匿名对象
+    // 2、避免内存泄露
     FixedBuffer mBuffer;
     OutputFunc mOutput;
     FlushFunc mFlush;

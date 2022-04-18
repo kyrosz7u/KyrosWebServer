@@ -17,8 +17,8 @@
 namespace net{
 
 Server::Server(int port, int work_nums){
-    m_port = port;
-    m_listenfd=socket(PF_INET,SOCK_STREAM,0);
+    mPort = port;
+    mListenfd=socket(PF_INET, SOCK_STREAM, 0);
 
     //表示socket网络地址的结构体，需要设置好协议、地址和端口
     sockaddr_in addr;
@@ -30,32 +30,32 @@ Server::Server(int port, int work_nums){
     addr.sin_addr.s_addr=htonl(INADDR_ANY);
     addr.sin_port=htons(port);
 
-    int ret=bind(m_listenfd,(sockaddr*)&addr,sizeof addr);
+    int ret=bind(mListenfd, (sockaddr*)&addr, sizeof addr);
     assert(ret==0);
-    m_epollfd=epoll_create(5);
+    mEpollfd=epoll_create(5);
 
     //LISTEN_BACKLOG设置内核监听队列的最大长度。
     //当监听长度大于LISTEN_BACKLOG时，服务器将不再受理新的客户连接，
     //客户端将收到ECONNREFUSED错误信息。
-    listen(m_listenfd,LISTEN_BACKLOG);
+    listen(mListenfd, LISTEN_BACKLOG);
 
     LOG_INFO<<"Port"<<port<<"Listening...";
 
     epoll_event ev;
-    ev.data.fd=m_listenfd;
+    ev.data.fd=mListenfd;
     ev.events=EPOLLIN|EPOLLRDHUP;
-    epoll_ctl(m_epollfd, EPOLL_CTL_ADD, m_listenfd, &ev);
+    epoll_ctl(mEpollfd, EPOLL_CTL_ADD, mListenfd, &ev);
 
-    m_threadpool = new ThreadPool(work_nums);
-    m_threadpool->Start();
+    mThreadpool = new ThreadPool(work_nums);
+    mThreadpool->Start();
 
 }
 
 Server::~Server(){
-    m_threadpool->Stop();
-    close(m_listenfd);
-    close(m_epollfd);
-    delete m_threadpool;
+    mThreadpool->Stop();
+    close(mListenfd);
+    close(mEpollfd);
+    delete mThreadpool;
 }
 
 void Server::setReadCallBack(ConnCallBackFunc &&fb){
@@ -68,32 +68,30 @@ void Server::setWriteCallBack(ConnCallBackFunc &&fb){
 
 void Server::handleRead(int connfd) {
     LOG_DEBUG<<"connfd:"<<connfd<<"handleRead";
-    int ret = connMap[connfd]->readBuffer();
+    int ret = connMap[connfd]->recv();
     if(ret<=0){
         CloseConn(connfd);
         return ;
     }
-    LOG_DEBUG<<"readBuffer:"<<connMap[connfd]->m_rBuffer;
+    LOG_DEBUG<<"recv:"<<connMap[connfd]->mReadBuffer.readPtr();
     if(rCallBack){
         rCallBack(connMap[connfd]);
     }
-    epoll_mod(m_epollfd, connfd, EPOLLOUT);
-
-
+    epoll_mod(mEpollfd, connfd, EPOLLOUT);
 }
 
 void Server::handleWrite(int connfd) {
     LOG_DEBUG<<"connfd:"<<connfd<<"handleWrite";
-    int ret = connMap[connfd]->writeBuffer();
+    int ret = connMap[connfd]->send();
     if(ret==-1){
         CloseConn(connfd);
         return ;
     }
-    LOG_DEBUG<<"writeBuffer:"<<connMap[connfd]->m_rBuffer;
+    LOG_DEBUG<<"send:"<<connMap[connfd]->mWriteBuffer.readPtr();
     if(wCallBack){
         wCallBack(connMap[connfd]);
     }
-    epoll_mod(m_epollfd, connfd, EPOLLIN);
+    epoll_mod(mEpollfd, connfd, EPOLLIN);
 }
 
 void Server::handleErr(int connfd) {
@@ -103,10 +101,10 @@ void Server::handleErr(int connfd) {
 //map默认不是线程安全的
 void Server::CloseConn(int connfd) {
     shutdown(connfd,SHUT_RD);
-    map_lock.Lock();
-    epoll_ctl(m_epollfd, EPOLL_CTL_DEL, connfd, 0);
+    mapLock.Lock();
+    epoll_ctl(mEpollfd, EPOLL_CTL_DEL, connfd, 0);
     connMap.erase(connfd);
-    map_lock.Unlock();
+    mapLock.Unlock();
     LOG_TRACE<<"connfd:"<<connfd<<"Closed";
 }
 
@@ -114,33 +112,33 @@ void Server::CloseConn(int connfd) {
     int ep_nums;
     while(1){
         //-1表示一直阻塞到有事件到达
-        ep_nums=epoll_wait(m_epollfd,m_event,MAX_EVENT_NUM,-1);
+        ep_nums=epoll_wait(mEpollfd, epollEvent, MAX_EVENT_NUM, -1);
         LOG_TRACE<<"epoll_wakeup";
         for(int i=0;i<ep_nums;i++){
-            if(m_event[i].data.fd==m_listenfd){
+            if(epollEvent[i].data.fd == mListenfd){
                 sockaddr_in client_addr;
                 socklen_t addr_len;
                 addr_len = sizeof client_addr;
-                int connfd=accept(m_listenfd,(sockaddr*)&client_addr,&addr_len);
-                epoll_add(m_epollfd,connfd);
-                map_lock.Lock();
+                int connfd=accept(mListenfd, (sockaddr*)&client_addr, &addr_len);
+                epoll_add(mEpollfd, connfd);
+                mapLock.Lock();
                 connMap[connfd] = std::move(shared_ptr<Connection>(new Connection(connfd)));
-                map_lock.Unlock();
+                mapLock.Unlock();
             //出错或者连接被远程关闭，直接释放本地的Connection对象
-            }else if (m_event[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
-                CloseConn(m_event[i].data.fd);
+            }else if (epollEvent[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
+                CloseConn(epollEvent[i].data.fd);
             }
             else{
-                int connfd = m_event[i].data.fd;
-                if(m_event[i].events&EPOLLIN){
+                int connfd = epollEvent[i].data.fd;
+                if(epollEvent[i].events & EPOLLIN){
                     LOG_TRACE<<"epoll connfd:"<<connfd<<"Read";
-                    m_threadpool->AddTask(std::bind(&Server::handleRead,this,connfd));
-                }else if(m_event[i].events&EPOLLOUT){
+                    mThreadpool->AddTask(std::bind(&Server::handleRead, this, connfd));
+                }else if(epollEvent[i].events & EPOLLOUT){
                     LOG_TRACE<<"epoll connfd:"<<connfd<<"Write";
-                    m_threadpool->AddTask(std::bind(&Server::handleWrite,this,connfd));
-                }else if(m_event[i].events&EPOLLERR){
+                    mThreadpool->AddTask(std::bind(&Server::handleWrite, this, connfd));
+                }else if(epollEvent[i].events & EPOLLERR){
                     LOG_TRACE<<"epoll connfd:"<<connfd<<"Err";
-                    m_threadpool->AddTask(std::bind(&Server::handleErr,this,connfd));
+                    mThreadpool->AddTask(std::bind(&Server::handleErr, this, connfd));
                 }else{}
             }
         }

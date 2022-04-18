@@ -1,0 +1,2 @@
+add_executable(buffer_unittest buffer_unittest.cpp)
+target_link_libraries(buffer_unittest base gtest)

@@ -8,11 +8,11 @@ namespace base {
 
 const char *LogLevelName[Logger::NUM_LOG_LEVELS]
 ={
-        "TRACE ",
-        "DEBUG ",
-        "INFO  ",
-        "WARN  ",
-        "ERROR ",
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR",
 };
 
 Logger::LogLevel initLogLevel()

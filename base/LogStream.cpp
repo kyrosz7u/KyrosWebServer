@@ -26,10 +26,9 @@ LogStream::LogStream()
 
 LogStream::~LogStream()
 {
-    const char *buf=mBuffer._buffer;
-    int buflen=mBuffer.length();
-    *mBuffer.bufptr = '\n';
-    mOutput(buf, buflen+1);
+
+    mBuffer.append('\n');
+    mOutput(mBuffer.readPtr(), mBuffer.used());
 }
 
 template<typename T>
@@ -40,7 +39,7 @@ template<typename T>
 void LogStream::formatInteger(T v)
 {
     if(mBuffer.avail() >= kMaxNumericSize){
-        size_t len=convert(mBuffer.bufptr,v);
+        size_t len=convert(mBuffer.writePtr(),v);
         mBuffer.add(len);
     }
 }
@@ -100,7 +99,7 @@ LogStream& LogStream::operator<<(const void* p)
     uintptr_t v = reinterpret_cast<uintptr_t>(p);
     if (mBuffer.avail() >= kMaxNumericSize)
     {
-        char* buf = mBuffer.bufptr;
+        char* buf = mBuffer.writePtr();
         buf[0] = '0';
         buf[1] = 'x';
         size_t len = convertHex(buf+2, v);
@@ -114,7 +113,7 @@ LogStream& LogStream::operator<<(double v)
 {
     if (mBuffer.avail() >= kMaxNumericSize)
     {
-        int len = snprintf(mBuffer.bufptr, kMaxNumericSize, "%.12g", v);
+        int len = snprintf(mBuffer.writePtr(), kMaxNumericSize, "%.12g", v);
         mBuffer.add(len);
     }
     return *this;
