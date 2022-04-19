@@ -58,7 +58,9 @@ Server::~Server(){
     delete mThreadpool;
 }
 
-
+void Server::setConnectedCallBack(ConnCallBackFunc &&fb){
+    cCallBack=std::move(fb);
+}
 
 void Server::setReadCallBack(ConnCallBackFunc &&fb){
     rCallBack=std::move(fb);
@@ -68,46 +70,42 @@ void Server::setWriteCallBack(ConnCallBackFunc &&fb){
     wCallBack=std::move(fb);
 }
 
-void Server::handleConnected(int connfd) {
-    mapLock.Lock();
-    connMap[connfd] = std::move(shared_ptr<Connection>(new Connection(connfd)));
-    mapLock.Unlock();
-}
-
-void Server::handleRead(int connfd) {
-    LOG_DEBUG<<"connfd:"<<connfd<<"handleRead";
-    int ret = connMap[connfd]->recv();
+void Server::handleRead(ConnPtr &conn) {
+    int connfd=conn->getFd();
+    LOG_DEBUG<<"Conn:"<<connfd<<"handleRead";
+    int ret = conn->recv();
     if(ret<=0){
-        CloseConn(connfd);
+        CloseConn(conn);
         return ;
     }
-    LOG_DEBUG<<"recv:"<<connMap[connfd]->mReadBuffer.readPtr();
+    LOG_DEBUG<<"recv:"<<conn->mReadBuffer.readPtr();
     if(rCallBack){
-        rCallBack(connMap[connfd]);
+        rCallBack(conn);
     }
     epoll_mod(mEpollfd, connfd, EPOLLOUT);
 }
 
-void Server::handleWrite(int connfd) {
+void Server::handleWrite(ConnPtr &conn) {
+    int connfd = conn->getFd();
     LOG_DEBUG<<"connfd:"<<connfd<<"handleWrite";
-    int ret = connMap[connfd]->send();
+    int ret = conn->send();
     if(ret==-1){
-        CloseConn(connfd);
+        CloseConn(conn);
         return ;
     }
-    LOG_DEBUG<<"send:"<<connMap[connfd]->mWriteBuffer.readPtr();
+    LOG_DEBUG<<"send:"<<conn->mWriteBuffer.readPtr();
     if(wCallBack){
-        wCallBack(connMap[connfd]);
+        wCallBack(conn);
     }
     epoll_mod(mEpollfd, connfd, EPOLLIN);
 }
 
-void Server::handleErr(int connfd) {
+void Server::handleErr(ConnPtr &conn) {
 
 }
 
-//map默认不是线程安全的
-void Server::CloseConn(int connfd) {
+void Server::CloseConn(ConnPtr &conn) {
+    int connfd = conn->getFd();
     shutdown(connfd,SHUT_RD);
     mapLock.Lock();
     epoll_ctl(mEpollfd, EPOLL_CTL_DEL, connfd, 0);
@@ -128,23 +126,29 @@ void Server::CloseConn(int connfd) {
                 socklen_t addr_len;
                 addr_len = sizeof client_addr;
                 int connfd=accept(mListenfd, (sockaddr*)&client_addr, &addr_len);
+                ConnPtr conn=shared_ptr<Connection>(new Connection(connfd));
+                mapLock.Lock();
+                connMap[connfd] = conn;
+                mapLock.Unlock();
+                if (cCallBack) {
+                    cCallBack(conn);
+                }
                 epoll_add(mEpollfd, connfd);
-
             //出错或者连接被远程关闭，直接释放本地的Connection对象
             }else if (epollEvent[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
-                CloseConn(epollEvent[i].data.fd);
+                CloseConn(connMap[epollEvent[i].data.fd]);
             }
             else{
                 int connfd = epollEvent[i].data.fd;
                 if(epollEvent[i].events & EPOLLIN){
                     LOG_TRACE<<"epoll connfd:"<<connfd<<"Read";
-                    mThreadpool->AddTask(std::bind(&Server::handleRead, this, connfd));
+                    mThreadpool->AddTask(std::bind(&Server::handleRead, this, connMap[connfd]));
                 }else if(epollEvent[i].events & EPOLLOUT){
                     LOG_TRACE<<"epoll connfd:"<<connfd<<"Write";
-                    mThreadpool->AddTask(std::bind(&Server::handleWrite, this, connfd));
+                    mThreadpool->AddTask(std::bind(&Server::handleWrite, this, connMap[connfd]));
                 }else if(epollEvent[i].events & EPOLLERR){
                     LOG_TRACE<<"epoll connfd:"<<connfd<<"Err";
-                    mThreadpool->AddTask(std::bind(&Server::handleErr, this, connfd));
+                    mThreadpool->AddTask(std::bind(&Server::handleErr, this, connMap[connfd]));
                 }else{}
             }
         }

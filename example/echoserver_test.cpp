@@ -8,7 +8,7 @@
 using namespace std;
 using namespace net;
 
-void cb(shared_ptr<Connection>& c);
+void cb(ConnPtr & c);
 
 int main()
 {
@@ -19,7 +19,7 @@ int main()
     return 0;
 }
 
-void cb(shared_ptr<Connection>& c){
+void cb(ConnPtr& c){
     char buf[128];
     int n=c->Read(buf,128);
     c->Write(buf, n);

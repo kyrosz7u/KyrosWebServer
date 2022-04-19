@@ -57,4 +57,8 @@ int Connection::send() {
     return write_sum;
 }
 
+int Connection::getFd() {
+    return mConnfd;
+}
+
 }//namespace net

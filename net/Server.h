@@ -22,8 +22,10 @@ using namespace base;
 using namespace std;
 
 namespace net {
-//定义处理网络连接读写的回调函数
-typedef std::function<void(shared_ptr<Connection>&)> ConnCallBackFunc;
+// 定义指向连接的智能指针
+typedef shared_ptr<Connection> ConnPtr;
+// 定义处理网络连接读写的回调函数
+typedef function<void(ConnPtr&)> ConnCallBackFunc;
 
 //通用的服务器类，通过注册回调函数的方式处理连接的读写
 class Server : public noncopyable{
@@ -36,19 +38,20 @@ public:
     void setReadCallBack(ConnCallBackFunc &&fb);
     void setWriteCallBack(ConnCallBackFunc &&fb);
 private:
-    void handleConnected(int connfd);
-    void handleRead(int connfd);
-    void handleWrite(int connfd);
-    void handleErr(int connfd);
-    void CloseConn(int connfd);
+    void handleRead(ConnPtr &conn);
+    void handleWrite(ConnPtr &conn);
+    void handleErr(ConnPtr &conn);
+    void CloseConn(ConnPtr &conn);
 
     int mPort;
     int mListenfd;
     int mEpollfd;
+    // 只有主线程执行回调函数
+    ConnCallBackFunc cCallBack;
     ConnCallBackFunc rCallBack;
     ConnCallBackFunc wCallBack;
     epoll_event epollEvent[MAX_EVENT_NUM];
-    map<int,shared_ptr<Connection>> connMap;
+    map<int,ConnPtr> connMap;
     Mutex mapLock;
     ThreadPool *mThreadpool;
 
