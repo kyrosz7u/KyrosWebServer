@@ -22,8 +22,6 @@ using namespace base;
 using namespace std;
 
 namespace net {
-// 定义指向连接的智能指针
-typedef shared_ptr<Connection> ConnPtr;
 // 定义处理网络连接读写的回调函数
 typedef function<void(ConnPtr&)> ConnCallBackFunc;
 

@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 
+using namespace std;
 using namespace base;
 
 namespace net {
@@ -18,6 +19,10 @@ namespace net {
 #define READ_BUFFER_SIZE 1024
 #define WRITE_BUFFER_SIZE 1024
 
+class Connection;
+
+// 定义指向连接的智能指针
+typedef shared_ptr<Connection> ConnPtr;
 class Connection {
 public:
     Connection(int socketfd)
@@ -38,6 +43,7 @@ private:
     boost::any mContext;
 
 };
+
 }//namespace net
 
 #endif //KYROSWEBSERVER_CONNECTION_H

@@ -14,7 +14,6 @@ using namespace std;
 namespace net {
 class HttpServer {
 
-    typedef shared_ptr<httpConnection> HttpConnPtr;
 public:
     //HttpServer默认起4个工作线程
     HttpServer(int port)
@@ -29,7 +28,6 @@ private:
     void connectedCb(ConnPtr &conn);
     Server mServer;
     const int mPort;
-    map<int,HttpConnPtr> httpConnMap;
 };
 
 

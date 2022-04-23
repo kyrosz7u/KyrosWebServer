@@ -26,13 +26,7 @@ int FixedBuffer::append(const char *str, size_t len) {
     return len;
 }
 
-// 接收常量字符串
-int FixedBuffer::append(const char *str)
-{
-    return append(str, sizeof str);
-}
-
-// 接收常量字符串
+// 接收字符串
 int FixedBuffer::append(std::string &str)
 {
     return append(str.c_str(), str.length() + 1);

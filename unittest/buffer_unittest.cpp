@@ -9,18 +9,23 @@
 using namespace std;
 using namespace base;
 
-//TEST(testCase, test0){
-//    FixedBuffer a;
-//    a.append("1234567");
-//    EXPECT_EQ(a.used(),8);
-//
-//    string s1(a.readPtr());
-//    string s2("1234567");
-//    EXPECT_EQ(s1,s2);
-//
-//    a.readPtrMove(3);
-//    EXPECT_EQ(a.used(),5);
-//}
+/*  */
+TEST(testCase0, test0){
+    FixedBuffer a;
+    a.append("123",3);
+
+    string s1 = a.readPtr();
+    EXPECT_EQ(s1,"123");
+
+    a.append("456",3);
+    s1 = a.readPtr();
+    EXPECT_EQ(s1,"123456");
+
+    a.append("789",3);
+    s1 = a.readPtr();
+    EXPECT_EQ(s1,"123456789");
+
+}
 
 //空间腾挪测试
 TEST(testCase1, test0) {

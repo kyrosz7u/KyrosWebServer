@@ -47,14 +47,14 @@ public:
     }
     int append(const char &ch);
     int append(const char *str, size_t len);
-    int append(const char *str);
+    int append(const char str[]);
     int append(std::string &str);
     int readFd(int fd);
 
     inline const char *readPtr() { return mReadPtr;}
     inline const char *start() { return _buf; }
 
-    int readPtrMove(int len){
+    int readPtrMove(long int len){
         char *temp= mReadPtr+=len;
         if(temp>=_buf&& temp <= mWritePtr){
             mReadPtr=temp;
