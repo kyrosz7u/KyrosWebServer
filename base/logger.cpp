@@ -1,90 +1,44 @@
 //
-// Created by 樱吹雪 on 2022/2/4.
+// Created by 樱吹雪 on 2022/4/7.
 //
 
-#include "logger.h"
+#include "Logger.h"
+#include "Thread.h"
+namespace base {
 
-using namespace base;
+const char *LogLevelName[Logger::NUM_LOG_LEVELS]
+={
+        "TRACE",
+        "DEBUG",
+        "INFO",
+        "WARN",
+        "ERROR",
+};
 
-template<typename T>
-void formatInteger(T v)
+Logger::LogLevel initLogLevel()
 {
-
+    if(getenv("SET_LOG_TRACE"))
+        return Logger::TRACE;
+    else if(getenv("SET_LOG_DEBUG"))
+        return Logger::DEBUG;
+    else
+        return Logger::INFO;
 }
 
-LogStream& LogStream::operator<<(short v)
-{
-    *this << static_cast<int>(v);
-    return *this;
+Logger::LogLevel gLogLevel=initLogLevel();
+
+Logger::LogLevel Logger::logLevel() {
+    return gLogLevel;
 }
 
-LogStream& LogStream::operator<<(unsigned short v)
-{
-    *this << static_cast<unsigned int>(v);
-    return *this;
+Logger::Logger(FileName file, int line, enum LogLevel level, const char *func) {
+    Timestamp now(Timestamp::now());
+    mStream<<now.toFormattedString(false)<<" ";
+    mStream<<"Tid:"<<CurrentThread::getStr();
+    mStream <<" ["<< LogLevelName[level];
+    mStream <<"] "<< file.get();
+    mStream << " line:" << line;
+    mStream << "  func:" << func<<" ";
 }
 
-LogStream& LogStream::operator<<(int v)
-{
-    formatInteger(v);
-    return *this;
-}
-
-LogStream& LogStream::operator<<(unsigned int v)
-{
-    formatInteger(v);
-    return *this;
-}
-
-LogStream& LogStream::operator<<(long v)
-{
-    formatInteger(v);
-    return *this;
-}
-
-LogStream& LogStream::operator<<(unsigned long v)
-{
-    formatInteger(v);
-    return *this;
-}
-
-LogStream& LogStream::operator<<(long long v)
-{
-    formatInteger(v);
-    return *this;
-}
-
-LogStream& LogStream::operator<<(unsigned long long v)
-{
-    formatInteger(v);
-    return *this;
-}
-
-LogStream& LogStream::operator<<(const void* p)
-{
-    uintptr_t v = reinterpret_cast<uintptr_t>(p);
-    if (buffer_.avail() >= kMaxNumericSize)
-    {
-        char* buf = buffer_.current();
-        buf[0] = '0';
-        buf[1] = 'x';
-        size_t len = convertHex(buf+2, v);
-        buffer_.add(len+2);
-    }
-    return *this;
-}
-
-// FIXME: replace this with Grisu3 by Florian Loitsch.
-LogStream& LogStream::operator<<(double v)
-{
-    if (buffer_.avail() >= kMaxNumericSize)
-    {
-        int len = snprintf(buffer_.current(), kMaxNumericSize, "%.12g", v);
-        buffer_.add(len);
-    }
-    return *this;
-}
-
-
-
-
+}//namespace base
