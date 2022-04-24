@@ -2,8 +2,9 @@
 // Created by 樱吹雪 on 2022/1/16.
 //
 
-#include <iostream>
 #include "ThreadPool.h"
+#include "Logger.h"
+#include <assert.h>
 
 using namespace std;
 using namespace base;
@@ -50,16 +51,17 @@ void ThreadPool::Stop(){
 }
 
 void ThreadPool::AddTask(ThreadTask &&t){
+//    assert(isRunning == 1);     //不然会无法添加任务
     MutexLock _ML(mMutex);
-    if(isRunning){
-        while(mTasks.size()>=qSize){
-            isFull.wait();
-        }
-        mTasks.push(std::move(t));
-        if(mTasks.size()==1){
-            isEmpty.post();
-        }
+//    if(isRunning){
+    while(mTasks.size()>=qSize){
+        isFull.wait();
     }
+    mTasks.push(std::move(t));
+    if(mTasks.size()==1){
+        isEmpty.post();
+    }
+//    }
 }
 
 ThreadTask ThreadPool::take(){
@@ -85,7 +87,7 @@ ThreadTask ThreadPool::take(){
 void ThreadPool::runInThread(){
 //    cout<<"thread start:"<<CurrentThread::getStr()<<"this:"<<this<<endl;
 //    cout<<this->isRunning<<endl;
-    cout<<"thread start:"<<CurrentThread::getStr()<<endl;
+//    cout<<"thread start:"<<CurrentThread::getStr()<<endl;
     while(isRunning){
         ThreadTask t=take();
         if(t){
@@ -93,7 +95,6 @@ void ThreadPool::runInThread(){
         }
 
     }
-    cout<<"2333"<<endl;
 }
 }//namespace base;
 

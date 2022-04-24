@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include "base/Thread.h"
 #include "base/Mutex.h"
-#include "base/logger.h"
+#include "base/LogStream.h"
 
 using namespace std;
 using namespace base;

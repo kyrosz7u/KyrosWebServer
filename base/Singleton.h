@@ -5,6 +5,9 @@
 #ifndef KYROSWEBSERVER_SINGLETON_H
 #define KYROSWEBSERVER_SINGLETON_H
 
+#include <assert.h>
+
+// 注意：这个Singleton不是线程安全的，多线程调用的时候可能会构造两个T
 template<class T>
 class Singleton{
 public:
@@ -13,6 +16,10 @@ public:
             _instance=new T;
         }
         return _instance;
+    }
+    Destroy(){
+        assert(_instance!= nullptr);
+        delete _instance;
     }
 private:
     Singleton();

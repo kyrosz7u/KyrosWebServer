@@ -5,33 +5,45 @@
 #ifndef KYROSWEBSERVER_CONNECTION_H
 #define KYROSWEBSERVER_CONNECTION_H
 
+#include "base/Buffer.h"
+#include "boost/any.hpp"
 #include <unistd.h>
 #include <functional>
 #include <memory>
+
+using namespace std;
+using namespace base;
 
 namespace net {
 //系统为每个连接分配固定大小的读写缓冲区
 #define READ_BUFFER_SIZE 1024
 #define WRITE_BUFFER_SIZE 1024
+
+class Connection;
+
+// 定义指向连接的智能指针
+typedef shared_ptr<Connection> ConnPtr;
 class Connection {
 public:
     Connection(int socketfd)
-    :m_sockfd(socketfd),
-    mReadPtr(0),
-    mWritePtr(0){}
-    ~Connection(){close(m_sockfd);}
-    int Read(char* buf,int len);
-    int Write(char* buf,int len);
-public:
-//    friend class Server;
-    int readBuffer();
-    int writeBuffer();
-    char m_rBuffer[READ_BUFFER_SIZE];
-    int mReadPtr;
-    char m_wBuffer[WRITE_BUFFER_SIZE];
-    int mWritePtr;
-    int m_sockfd;
+    : mConnfd(socketfd)
+    {}
+    ~Connection(){close(mConnfd);}
+    int Read(char* buf,size_t len);
+    int Write(char* buf,size_t len);
+    int recv();
+    int send();
+    int getFd();
+    boost::any& getContext(){ return mContext; }
+    void setContext(const boost::any &c){ mContext = c; }
+    FixedBuffer mReadBuffer;
+    FixedBuffer mWriteBuffer;
+private:
+    int mConnfd;
+    boost::any mContext;
+
 };
+
 }//namespace net
 
 #endif //KYROSWEBSERVER_CONNECTION_H
