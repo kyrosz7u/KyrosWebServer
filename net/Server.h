@@ -35,11 +35,11 @@ public:
     void setConnectedCallBack(ConnCallBackFunc &&fb);
     void setReadCallBack(ConnCallBackFunc &&fb);
     void setWriteCallBack(ConnCallBackFunc &&fb);
+    void CloseConn(ConnPtr &conn);
 private:
     void handleRead(ConnPtr &conn);
     void handleWrite(ConnPtr &conn);
     void handleErr(ConnPtr &conn);
-    void CloseConn(ConnPtr &conn);
 
     int mPort;
     int mListenfd;
