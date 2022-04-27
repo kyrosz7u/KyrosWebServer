@@ -16,17 +16,15 @@ using namespace std;
 namespace net {
 namespace http {
 class HttpServer {
-    typedef std::function<void(const HttpRequest &req, HttpResponse &resp)> HttpServeFunc;
+    typedef std::function<void(const HttpRequest *req, HttpResponse &resp)> HttpServeFunc;
 public:
     //HttpServer默认起4个工作线程
-    HttpServer(int port)
-            : mPort(port),
-              mServer(port,4){}
-    HttpServer(int port, int work_nums);
+    HttpServer(int port, int work_nums=4);
     void ListenAndServe(HttpServeFunc f);
 private:
     void connectedCb(ConnPtr &conn);
     void readCb(ConnPtr &conn);
+    void WriteCb(ConnPtr &conn);
     HttpServeFunc HttpCallback;
     Server mServer;
     const int mPort;

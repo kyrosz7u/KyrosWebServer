@@ -22,10 +22,12 @@ public:
     }
     bool parseRequest(FixedBuffer& Buffer);
     HttpRequest::CHECK_STATE getRequestState() { return Request.getCheckState(); }
-    const HttpRequest& getRequest() { return Request; }
+    HttpRequest* getRequest() { return &Request; }
+    HttpResponse& getResponse() { return Response; }
 
 private:
     HttpRequest Request;
+    HttpResponse Response;
 };
 }//namespace http
 }//namespace net

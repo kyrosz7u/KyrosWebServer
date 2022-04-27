@@ -5,9 +5,10 @@
 #ifndef KYROSWEBSERVER_HTTPRESPONSE_H
 #define KYROSWEBSERVER_HTTPRESPONSE_H
 
-#include "base/Buffer.h"
-#include "base/StringPiece.h"
 #include "base/Copyable.h"
+#include "base/StringPiece.h"
+#include "base/Buffer.h"
+#include "base/FileSystem.h"
 #include <map>
 #include <string>
 
@@ -28,36 +29,35 @@ public:
     const map<STATUS_CODE,StringPiece> kStatusMessage={
         {SUCCESS_OK,"OK"},
         {CLIENT_ERROR_BAD_REQUEST,"Your request has bad syntax "
-                                "or is inherently impossible to staisfy.\n"},
+                                "or is inherently impossible to staisfy."},
         {CLIENT_ERROR_FORBIDDEN,"You do not have permission to "
-                                "get file form this server.\n"},
-        {CLIENT_ERROR_NOT_FOUND,"The requested file was not found on this server.\n"},
-        {SERVER_ERROR_INTERNAL_ERR,"There was an unusual problem serving the request file.\n"},
+                                "get file form this server."},
+        {CLIENT_ERROR_NOT_FOUND,"The requested file was not found on this server."},
+        {SERVER_ERROR_INTERNAL_ERR,"There was an unusual problem serving the request file."},
     };
 public:
 
-    HttpResponse()
-    {
-        mStatusCode=CLIENT_ERROR_NOT_FOUND;
-        mAlive= false;
-        mContentLength=0;
-    }
+    HttpResponse();
+    HttpResponse(STATUS_CODE StateCode);
     void setStatusCode(STATUS_CODE StatusCode){ mStatusCode = StatusCode; }
     void setHeader(const string& key, const string& Val){ mHeaders[key] = Val; }
     void setContentLength(const int &len){mContentLength=len;}
     void setContentType(const string& ContentType){ mHeaders["Content-Type"] = ContentType; }
-    void setConnection(bool isAlive){mAlive=isAlive;}
     void setBody(const string& Body){mBody=Body;}
-
+    FileSystem::FILE_STATE openFile(const StringPiece &path);
+    bool hasFile(){ return !(mFile.getAddr() == nullptr); }
+    FileSystem& getFile(){ return mFile; }
     bool isClose(){ return !mAlive; }
     void appendToBuffer(FixedBuffer &Buffer);
 
-private:
-    STATUS_CODE mStatusCode;
+public:
     std::map<string, string> mHeaders;
     bool mAlive;
     int mContentLength;
     string mBody;
+private:
+    STATUS_CODE mStatusCode;
+    FileSystem mFile;
 };
 
 }//namespace http

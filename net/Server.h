@@ -32,9 +32,11 @@ public:
     ~Server();
 
     [[noreturn]] void EventLoop();
-    void setConnectedCallBack(ConnCallBackFunc &&fb);
-    void setReadCallBack(ConnCallBackFunc &&fb);
-    void setWriteCallBack(ConnCallBackFunc &&fb);
+    /* 注意： c++中指向临时生成的匿名对象需要用const指针，
+     * 这里如果去掉const，那么std::bind生成的匿名function对象将无法被引用 */
+    void setConnectedCallback(const ConnCallBackFunc &fb){ cCallBack=fb;}
+    void setReadCallBack(const ConnCallBackFunc &fb){rCallBack=fb;}
+    void setWriteCallBack(const ConnCallBackFunc &fb){wCallBack=fb;}
     void CloseConn(ConnPtr &conn);
 private:
     void handleRead(ConnPtr &conn);
@@ -42,8 +44,8 @@ private:
     void handleErr(ConnPtr &conn);
 
     int mPort;
-    int mListenfd;
-    int mEpollfd;
+    int mListenFd;
+    int mEpollFd;
     // 只有主线程执行回调函数
     ConnCallBackFunc cCallBack;
     ConnCallBackFunc rCallBack;
@@ -56,7 +58,6 @@ private:
 };
 
 void epoll_add(int epfd, int fd);
-void epoll_mod(int epfd, int fd, int ev);
 
 }
 

@@ -23,4 +23,5 @@ void cb(ConnPtr& c){
     char buf[128];
     int n=c->Read(buf,128);
     c->Write(buf, n);
+    c->enableConnWrite();
 }

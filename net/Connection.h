@@ -6,7 +6,10 @@
 #define KYROSWEBSERVER_CONNECTION_H
 
 #include "base/Buffer.h"
+#include "base/FileSystem.h"
 #include "boost/any.hpp"
+#include <sys/uio.h>
+#include <sys/epoll.h>
 #include <unistd.h>
 #include <functional>
 #include <memory>
@@ -25,24 +28,41 @@ class Connection;
 typedef shared_ptr<Connection> ConnPtr;
 class Connection {
 public:
-    Connection(int socketfd)
-    : mConnfd(socketfd)
-    {}
+    Connection(int socketfd, int epfd)
+    : mConnfd(socketfd),
+      mPoller(epfd){
+        mAlive = true;
+        m_iv[0] = {nullptr, 0};
+        m_iv[1] = {nullptr, 0};
+    }
     ~Connection(){close(mConnfd);}
     int Read(char* buf,size_t len);
     int Write(char* buf,size_t len);
     int recv();
-    int send();
+    long int send();
     int getFd();
     boost::any& getContext(){ return mContext; }
+    boost::any* getMutableContext(){return &mContext;}
     void setContext(const boost::any &c){ mContext = c; }
+    void setFile(FileSystem &F){
+        m_iv[1].iov_base= F.getAddr();
+        m_iv[1].iov_len = F.getLength();
+    }
+    void enableConnRead(){epoll_mod(mPoller, mConnfd, EPOLLIN);}
+    void enableConnWrite(){epoll_mod(mPoller, mConnfd, EPOLLOUT);}
+    static void epoll_mod(int epfd, int fd, int ev);
     FixedBuffer mReadBuffer;
     FixedBuffer mWriteBuffer;
+
+public:
+    bool mAlive;
 private:
     int mConnfd;
+    int mPoller;
     boost::any mContext;
-
+    struct iovec m_iv[2];
 };
+
 
 }//namespace net
 

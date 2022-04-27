@@ -15,10 +15,12 @@ HttpServer::HttpServer(int port, int work_nums)
         : mPort(port),
           mServer(port,work_nums)
 {
-    mServer.setConnectedCallBack(
+    mServer.setConnectedCallback(
             std::bind(&HttpServer::connectedCb, this, std::placeholders::_1));
     mServer.setReadCallBack(
             std::bind(&HttpServer::readCb, this, std::placeholders::_1));
+    mServer.setWriteCallBack(
+            std::bind(&HttpServer::WriteCb, this, std::placeholders::_1));
 }
 
 void HttpServer::connectedCb(ConnPtr &conn){
@@ -27,20 +29,43 @@ void HttpServer::connectedCb(ConnPtr &conn){
 };
 
 void HttpServer::readCb(ConnPtr &conn){
-    HttpContext &ctx=boost::any_cast<HttpContext&>(conn->getContext());
-    bool ret= ctx.parseRequest(conn->mReadBuffer);
-    if(!ret){
-        mServer.CloseConn(conn);
+    /* 为什么是any_cast<HttpContext> */
+    HttpContext *ctx=boost::any_cast<HttpContext>(conn->getMutableContext());
+    HttpRequest *req = ctx->getRequest();
+    HttpResponse &resp = ctx->getResponse();
+
+    HTTP_CODE ret= req->processRead(conn->mReadBuffer);
+    if(ret==NO_REQUEST){
+        LOG_TRACE << "NO_REQUEST" << conn->getFd();
+        conn->enableConnRead();
+        return ;
     }
-    if(ctx.getRequestState()==HttpRequest::CHECK_STATE_SUCCESS){
-        const HttpRequest &req = ctx.getRequest();
-        HttpResponse resp;
-        HttpCallback(req,resp);
+    else if(ret==BAD_REQUEST){
+        LOG_TRACE << "BAD_REQUEST" << conn->getFd();
+//        HttpResponse resp(HttpResponse::CLIENT_ERROR_BAD_REQUEST);
+        resp.setStatusCode(HttpResponse::CLIENT_ERROR_BAD_REQUEST);
+        conn->mAlive= false;
         resp.appendToBuffer(conn->mWriteBuffer);
-        if(resp.isClose()){
-            mServer.CloseConn(conn);
+    }else if(ret==GET_REQUEST) {
+        LOG_TRACE << "GET_REQUEST" << conn->getFd();
+//        HttpResponse resp(HttpResponse::SUCCESS_OK);
+        resp.setStatusCode(HttpResponse::SUCCESS_OK);
+        // http回调函数
+        HttpCallback(req, resp);
+        resp.appendToBuffer(conn->mWriteBuffer);
+        // 设置要传输的文件
+        if(resp.hasFile()){
+            conn->setFile(resp.getFile());
         }
-        ctx.Init();
+        conn->mAlive = resp.mAlive;
+        req->Init();
+    }
+    conn->enableConnWrite();
+}
+//
+void HttpServer::WriteCb(ConnPtr &conn){
+    if (!conn->mAlive) {
+        mServer.CloseConn(conn);
     }
 }
 
