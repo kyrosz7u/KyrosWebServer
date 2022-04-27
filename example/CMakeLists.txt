@@ -14,3 +14,6 @@ target_link_libraries(threadpool_test base)
 
 add_executable(echoserver_test echoserver_test.cpp)
 target_link_libraries(echoserver_test base net)
+
+add_executable(httpserver_test httpserver_test.cpp)
+target_link_libraries(httpserver_test base net)

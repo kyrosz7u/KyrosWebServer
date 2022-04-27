@@ -28,7 +28,7 @@ TEST(HttpTest, RequestWithBody){
     resp.setStatusCode(HttpResponse::SUCCESS_OK);
     resp.setHeader("Accept-Ranges","bytes");
     resp.setHeader("Cache-Control","no-cache");
-    resp.setConnection(true);
+    resp.mAlive= true;
     resp.setContentLength(10);
     resp.setContentType("text/html");
     resp.setHeader("Date","Mon, 25 Apr 2022 08:35:51 GMT");
