@@ -1,87 +1,34 @@
 //
 // Created by 樱吹雪 on 2022/4/19.
 //
-
-#ifndef KYROSWEBSERVER_HTTPCONTEXT_H
-#define KYROSWEBSERVER_HTTPCONTEXT_H
+#pragma once
 
 #include "Connection.h"
-#include "base//Buffer.h"
+#include "HttpRequest.h"
+#include "HttpResponse.h"
+#include "base/Buffer.h"
 
 namespace net {
 namespace http {
+
 class HttpContext {
 public:
-    /*http请求方法*/
-    enum METHOD {
-        GET, POST, HEAD, PUT, DELETE,
-        TRACE, OPTIONS, CONNECT, PATH
-    };
-    /*http操作结果*/
-    enum HTTP_CODE {
-        NO_REQUEST,  // 请求未读完
-        GET_REQUEST, // 获得请求
-        BAD_REQUEST, // 错误请求
-        NO_RESOURCE, FORBIDDEN_REQUEST, FILE_REQUEST,
-        INTERNAL_ERROR, CLOSED_CONNECTION,
-    };
-    /*http从状态机状态定义，用来读取每个行*/
-    enum LINE_STATE {
-        LINE_OK,    // 处理完http报文中一个完整的行
-        LINE_OPEN,  // 未处理完http一个完整行，等待接收新的数据再处理
-        LINE_BAD,   // 接收到的数据出错了
-    };
-    /*http主状态机状态定义，用来控制分析报文*/
-    enum CHECK_STATE {
-        CHECK_STATE_REQUEST,
-        CHECK_STATE_HEADER,
-        CHECK_STATE_BODY,
-        CHECK_STATE_SUCCESS,
-    };
-    /*http请求结构体*/
-    struct httpRequest {
-        string url;
-        string version;
-        string host;
-        bool linger=false;
-        METHOD method;
-        long int contentLength=0;
-        string body;
-    };
-
-    /*http响应结构体*/
-    struct httpResponse {
-
-    };
-
-public:
     HttpContext(){
-        mCheckState=CHECK_STATE_REQUEST;
-        mCheckIndex=0;
-        mLineState = LINE_OPEN;
+
     }
-
-    HTTP_CODE processRead(FixedBuffer &buf);
-    httpRequest& getRequest() { return Request; }
-
-    CHECK_STATE getCheckState() { return mCheckState; }
-    LINE_STATE getLineState() { return mLineState; }
-    unsigned int getCheckIndex() { return mCheckIndex; }
+    void Init()
+    {
+        Request.Init();
+    }
+    bool parseRequest(FixedBuffer& Buffer);
+    HttpRequest::CHECK_STATE getRequestState() { return Request.getCheckState(); }
+    HttpRequest* getRequest() { return &Request; }
+    HttpResponse& getResponse() { return Response; }
 
 private:
-    LINE_STATE parseLine(char* rd_buf, size_t sz);
-    HTTP_CODE parseRequest(char *text);
-    HTTP_CODE parseHeader(char *checkptr);
-    HTTP_CODE parseContent(char *text);
-
-    httpRequest Request;
-    httpResponse Response;
-    unsigned int mCheckIndex;
-    CHECK_STATE mCheckState;
-    LINE_STATE mLineState;
+    HttpRequest Request;
+    HttpResponse Response;
 };
 }//namespace http
 }//namespace net
 
-
-#endif //KYROSWEBSERVER_HTTPCONTEXT_H

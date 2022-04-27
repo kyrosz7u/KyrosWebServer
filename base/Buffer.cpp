@@ -26,11 +26,18 @@ int FixedBuffer::append(const char *str, size_t len) {
     return len;
 }
 
-// 接收字符串
-int FixedBuffer::append(std::string &str)
+
+/* StringPiece中ptr的类型是const，所以使用这个类也要加const */
+int FixedBuffer::append(const StringPiece &str)
 {
-    return append(str.c_str(), str.length() + 1);
+    return append(str.data(), str.size());
 }
+
+//// 接收字符串
+//int FixedBuffer::append(std::string &str)
+//{
+//    return append(str.c_str(), str.length());
+//}
 
 /*写入字符*/
 int FixedBuffer::append(const char &ch)

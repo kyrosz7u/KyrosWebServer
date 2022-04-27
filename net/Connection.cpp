@@ -3,10 +3,11 @@
 //
 
 #include "Connection.h"
+#include "base/Logger.h"
 #include <sys/socket.h>
 #include <string.h>
 
-namespace net {
+using namespace net;
 
 /*读取connection的buffer，并返回读取长度*/
 int Connection::Read(char* buf,size_t len){
@@ -35,30 +36,50 @@ int Connection::recv() {
     return mReadBuffer.readFd(mConnfd);
 }
 
-/*将mWriteBuffer中的数据发送出去*/
-int Connection::send() {
+/* 将mWriteBuffer中的数据发送出去*/
+/* 返回 -1：出错  0：发送完毕   >0：待发送数量*/
+long int Connection::send() {
     int write_bytes;
     int write_sum=0;
 
-    while(mWriteBuffer.used()>0){
-        write_bytes = ::send(mConnfd, mWriteBuffer.readPtr(), mWriteBuffer.used(), 0);
-        if(write_bytes<0){
+    while(1){
+        m_iv[0].iov_base=(char*)mWriteBuffer.readPtr();
+        m_iv[0].iov_len = mWriteBuffer.used();
+        write_bytes = ::writev(mConnfd, m_iv, 2);
+        LOG_TRACE << write_bytes;
+        if(write_bytes<=0){
             break;
         }
-        mWriteBuffer.readPtrMove(write_bytes);
+        if(write_bytes>mWriteBuffer.used()){
+            size_t temp = write_bytes - mWriteBuffer.used();
+            m_iv[1].iov_base = (char*)(m_iv[1].iov_base) + temp;
+            m_iv[1].iov_len -= temp;
+            mWriteBuffer.reset();
+        }else{
+            mWriteBuffer.readPtrMove(write_bytes);
+        }
         write_sum+=write_bytes;
     }
 
-    if(write_bytes<0) {
-        if (errno != EAGAIN) {
-            return -1;
+    if(write_bytes==-1){
+        if (errno == EAGAIN) {
+            return write_bytes=mWriteBuffer.used() + m_iv[1].iov_len;
         }
+        LOG_TRACE << "errno"<<sys_errlist[errno];
     }
-    return write_sum;
+    m_iv[1].iov_base= nullptr;
+    m_iv[1].iov_len= 0;
+    return write_bytes;
 }
 
 int Connection::getFd() {
     return mConnfd;
 }
 
-}//namespace net
+void Connection::epoll_mod(int epfd, int fd, int ev)
+{
+    epoll_event event;
+    event.data.fd = fd;
+    event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
+    epoll_ctl(epfd, EPOLL_CTL_MOD, fd, &event);
+}

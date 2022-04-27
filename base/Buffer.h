@@ -6,6 +6,7 @@
 #define KYROSWEBSERVER_FIXEDBUFFER_H
 
 #include "Copyable.h"
+#include "StringPiece.h"
 #include <stdint.h>
 #include <cstring>
 #include <string>
@@ -46,9 +47,10 @@ public:
         _buf = nullptr;
     }
     int append(const char &ch);
+    int append(const StringPiece &str);
     int append(const char *str, size_t len);
-    int append(const char str[]);
-    int append(std::string &str);
+//    int append(const char str[]);
+//    int append(std::string &str);
     int readFd(int fd);
 
     inline const char *readPtr() { return mReadPtr;}

@@ -4,7 +4,7 @@
 
 #include "gtest/gtest.h"
 
-#include "net/HttpContext.h"
+#include "net/HttpRequest.h"
 #include "base/Logger.h"
 #include "base/Buffer.h"
 
@@ -39,39 +39,36 @@ char httprequest5[]="\r\n";
 /*模拟接收不连续的http报文数据包*/
 TEST(HttpTest, RequestWithoutBody){
     FixedBuffer buf;
-    HttpContext ctx;
-
-    /* 初始化Request引用 */
-    HttpContext::httpRequest& req = ctx.getRequest();
+    HttpRequest req;
 
     buf.append(httprequest1,sizeof httprequest1-1);
-    auto ret = ctx.processRead(buf);
-    EXPECT_EQ(ret,HttpContext::NO_REQUEST);
-    EXPECT_EQ(ctx.getLineState(),HttpContext::LINE_OPEN);
-    EXPECT_EQ(ctx.getCheckState(),HttpContext::CHECK_STATE_REQUEST);
+    auto ret = req.processRead(buf);
+    EXPECT_EQ(ret,NO_REQUEST);
+    EXPECT_EQ(req.getLineState(), HttpRequest::LINE_OPEN);
+    EXPECT_EQ(req.getCheckState(), HttpRequest::CHECK_STATE_REQUEST);
 
     buf.append(httprequest2,sizeof httprequest2-1);
-    ret = ctx.processRead(buf);
-    EXPECT_EQ(ret,HttpContext::NO_REQUEST);
-    EXPECT_EQ(ctx.getLineState(),HttpContext::LINE_OK);
-    EXPECT_EQ(ctx.getCheckState(),HttpContext::CHECK_STATE_HEADER);
+    ret = req.processRead(buf);
+    EXPECT_EQ(ret,NO_REQUEST);
+    EXPECT_EQ(req.getLineState(), HttpRequest::LINE_OK);
+    EXPECT_EQ(req.getCheckState(), HttpRequest::CHECK_STATE_HEADER);
 
     buf.append(httprequest3,sizeof httprequest3-1);
-    ret = ctx.processRead(buf);
-    EXPECT_EQ(ret,HttpContext::NO_REQUEST);
-    EXPECT_EQ(ctx.getLineState(),HttpContext::LINE_OPEN);
-    EXPECT_EQ(ctx.getCheckState(),HttpContext::CHECK_STATE_HEADER);
+    ret = req.processRead(buf);
+    EXPECT_EQ(ret,NO_REQUEST);
+    EXPECT_EQ(req.getLineState(), HttpRequest::LINE_OPEN);
+    EXPECT_EQ(req.getCheckState(), HttpRequest::CHECK_STATE_HEADER);
 
     buf.append(httprequest4,sizeof httprequest4-1);
-    ret = ctx.processRead(buf);
-    EXPECT_EQ(ret,HttpContext::NO_REQUEST);
-    EXPECT_EQ(ctx.getLineState(),HttpContext::LINE_OK);
-    EXPECT_EQ(ctx.getCheckState(),HttpContext::CHECK_STATE_HEADER);
+    ret = req.processRead(buf);
+    EXPECT_EQ(ret,NO_REQUEST);
+    EXPECT_EQ(req.getLineState(), HttpRequest::LINE_OK);
+    EXPECT_EQ(req.getCheckState(), HttpRequest::CHECK_STATE_HEADER);
 
     buf.append(httprequest5,sizeof httprequest5-1);
-    ret = ctx.processRead(buf);
-    EXPECT_EQ(ret,HttpContext::GET_REQUEST);
-    EXPECT_EQ(req.method,HttpContext::GET);
+    ret = req.processRead(buf);
+    EXPECT_EQ(ret,GET_REQUEST);
+    EXPECT_EQ(req.method,GET);
     EXPECT_EQ(req.url,"/index.html");
     EXPECT_EQ(req.version,"HTTP/1.1");
     EXPECT_EQ(req.host,"127.0.0.1");
@@ -98,42 +95,39 @@ char httprequest16[]="Hello Http World";
 /*模拟接收不连续的http报文数据包*/
 TEST(HttpTest, RequestWithBody){
     FixedBuffer buf;
-    HttpContext ctx;
-
-    /* 初始化Request引用 */
-    HttpContext::httpRequest& req = ctx.getRequest();
+    HttpRequest req;
 
     buf.append(httprequest11,sizeof httprequest11-1);
-    auto ret = ctx.processRead(buf);
-    EXPECT_EQ(ret,HttpContext::NO_REQUEST);
-    EXPECT_EQ(ctx.getLineState(),HttpContext::LINE_OPEN);
-    EXPECT_EQ(ctx.getCheckState(),HttpContext::CHECK_STATE_REQUEST);
+    auto ret = req.processRead(buf);
+    EXPECT_EQ(ret,NO_REQUEST);
+    EXPECT_EQ(req.getLineState(),HttpRequest::LINE_OPEN);
+    EXPECT_EQ(req.getCheckState(),HttpRequest::CHECK_STATE_REQUEST);
 
     buf.append(httprequest12,sizeof httprequest12-1);
-    ret = ctx.processRead(buf);
-    EXPECT_EQ(ret,HttpContext::NO_REQUEST);
-    EXPECT_EQ(ctx.getLineState(),HttpContext::LINE_OK);
-    EXPECT_EQ(ctx.getCheckState(),HttpContext::CHECK_STATE_HEADER);
+    ret = req.processRead(buf);
+    EXPECT_EQ(ret,NO_REQUEST);
+    EXPECT_EQ(req.getLineState(),HttpRequest::LINE_OK);
+    EXPECT_EQ(req.getCheckState(),HttpRequest::CHECK_STATE_HEADER);
 
     buf.append(httprequest13,sizeof httprequest13-1);
-    ret = ctx.processRead(buf);
-    EXPECT_EQ(ret,HttpContext::NO_REQUEST);
-    EXPECT_EQ(ctx.getLineState(),HttpContext::LINE_OPEN);
-    EXPECT_EQ(ctx.getCheckState(),HttpContext::CHECK_STATE_HEADER);
+    ret = req.processRead(buf);
+    EXPECT_EQ(ret,NO_REQUEST);
+    EXPECT_EQ(req.getLineState(),HttpRequest::LINE_OPEN);
+    EXPECT_EQ(req.getCheckState(),HttpRequest::CHECK_STATE_HEADER);
 
     buf.append(httprequest14,sizeof httprequest14-1);
-    ret = ctx.processRead(buf);
-    EXPECT_EQ(ret,HttpContext::NO_REQUEST);
-    EXPECT_EQ(ctx.getLineState(),HttpContext::LINE_OK);
-    EXPECT_EQ(ctx.getCheckState(),HttpContext::CHECK_STATE_HEADER);
+    ret = req.processRead(buf);
+    EXPECT_EQ(ret,NO_REQUEST);
+    EXPECT_EQ(req.getLineState(),HttpRequest::LINE_OK);
+    EXPECT_EQ(req.getCheckState(),HttpRequest::CHECK_STATE_HEADER);
 
     buf.append(httprequest15,sizeof httprequest15-1);
-    ret = ctx.processRead(buf);
+    ret = req.processRead(buf);
     buf.append(httprequest16,sizeof httprequest16);
-    ret = ctx.processRead(buf);
+    ret = req.processRead(buf);
 
-    EXPECT_EQ(ret,HttpContext::GET_REQUEST);
-    EXPECT_EQ(req.method,HttpContext::POST);
+    EXPECT_EQ(ret,::GET_REQUEST);
+    EXPECT_EQ(req.method,POST);
     EXPECT_EQ(req.url,"/index.html");
     EXPECT_EQ(req.version,"HTTP/1.1");
     EXPECT_EQ(req.host,"127.0.0.1");
