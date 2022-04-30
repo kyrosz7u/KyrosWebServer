@@ -63,7 +63,7 @@ public:
     string url;
     string version;
     string host;
-    bool linger=false;
+    bool isAlive=false;
     METHOD method;
     long int contentLength=0;
     string body;

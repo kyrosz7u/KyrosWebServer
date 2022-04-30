@@ -40,21 +40,20 @@ public:
     HttpResponse();
     HttpResponse(STATUS_CODE StateCode);
     void setStatusCode(STATUS_CODE StatusCode){ mStatusCode = StatusCode; }
-    void setHeader(const string& key, const string& Val){ mHeaders[key] = Val; }
-    void setContentLength(const int &len){mContentLength=len;}
-    void setContentType(const string& ContentType){ mHeaders["Content-Type"] = ContentType; }
-    void setBody(const string& Body){mBody=Body;}
+    void setHeader(const string& key, const string& Val){ Headers[key] = Val; }
+    void setContentLength(const int &len){ ContentLength=len;}
+    void setContentType(const string& ContentType){ Headers["Content-Type"] = ContentType; }
+    void setBody(const string& ResponseBody){ Body=ResponseBody;}
     FileSystem::FILE_STATE openFile(const StringPiece &path);
     bool hasFile(){ return !(mFile.getAddr() == nullptr); }
     FileSystem& getFile(){ return mFile; }
-    bool isClose(){ return !mAlive; }
     void appendToBuffer(FixedBuffer &Buffer);
 
 public:
-    std::map<string, string> mHeaders;
-    bool mAlive;
-    int mContentLength;
-    string mBody;
+    std::map<string, string> Headers;
+    bool isAlive;
+    int ContentLength;
+    string Body;
 private:
     STATUS_CODE mStatusCode;
     FileSystem mFile;

@@ -25,7 +25,7 @@ HttpServer::HttpServer(int port, int work_nums)
 
 void HttpServer::connectedCb(ConnPtr &conn){
     conn->setContext(HttpContext());
-    LOG_INFO << "TcpServer::newConnection "<< conn->getFd();
+    LOG_TRACE << "TcpServer::newConnection "<< conn->getFd();
 };
 
 void HttpServer::readCb(ConnPtr &conn){
@@ -42,13 +42,11 @@ void HttpServer::readCb(ConnPtr &conn){
     }
     else if(ret==BAD_REQUEST){
         LOG_TRACE << "BAD_REQUEST" << conn->getFd();
-//        HttpResponse resp(HttpResponse::CLIENT_ERROR_BAD_REQUEST);
         resp.setStatusCode(HttpResponse::CLIENT_ERROR_BAD_REQUEST);
         conn->mAlive= false;
         resp.appendToBuffer(conn->mWriteBuffer);
     }else if(ret==GET_REQUEST) {
         LOG_TRACE << "GET_REQUEST" << conn->getFd();
-//        HttpResponse resp(HttpResponse::SUCCESS_OK);
         resp.setStatusCode(HttpResponse::SUCCESS_OK);
         // http回调函数
         HttpCallback(req, resp);
@@ -57,7 +55,7 @@ void HttpServer::readCb(ConnPtr &conn){
         if(resp.hasFile()){
             conn->setFile(resp.getFile());
         }
-        conn->mAlive = resp.mAlive;
+        conn->mAlive = resp.isAlive & req->isAlive;
         req->Init();
     }
     conn->enableConnWrite();

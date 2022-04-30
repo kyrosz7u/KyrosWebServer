@@ -22,6 +22,7 @@ void ServerHttp(const HttpRequest *req, HttpResponse &resp){
     if(req->url=="/133"){
         resp.openFile("/home/xy/ClionDeploy/root/log.html");
         resp.setContentType("text/html");
+        resp.isAlive = false;
     }
 
 }

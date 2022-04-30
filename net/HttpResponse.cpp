@@ -11,15 +11,15 @@ using namespace net::http;
 HttpResponse::HttpResponse()
 {
     mStatusCode=CLIENT_ERROR_NOT_FOUND;
-    mAlive= true;
-    mContentLength=0;
+    isAlive= true;
+    ContentLength=0;
 }
 
 HttpResponse::HttpResponse(STATUS_CODE StateCode)
 {
     mStatusCode=StateCode;
-    mAlive= true;
-    mContentLength=0;
+    isAlive= true;
+    ContentLength=0;
 }
 
 void HttpResponse::appendToBuffer(FixedBuffer &Buffer) {
@@ -29,22 +29,22 @@ void HttpResponse::appendToBuffer(FixedBuffer &Buffer) {
     snprintf(buf, sizeof buf, "HTTP/1.1 %d %s\r\n", mStatusCode, kStatusMessage.at(mStatusCode));
     Buffer.append(buf);
 
-    if(mAlive){
-        Buffer.append("Connection:keep-alive\r\n");
+    if(isAlive){
+        Buffer.append("Connection:keep-isAlive\r\n");
     }else{
         Buffer.append("Connection:closed\r\n");
     }
 
-    snprintf(buf, sizeof buf, "%s:%d\r\n", "Content-Length", mContentLength);
+    snprintf(buf, sizeof buf, "%s:%d\r\n", "Content-Length", ContentLength);
     Buffer.append(buf);
 
-    for(auto _pair:mHeaders){
+    for(auto _pair:Headers){
         snprintf(buf, sizeof buf, "%s:%s\r\n", _pair.first.c_str(), _pair.second.c_str());
         Buffer.append(buf);
     }
     Buffer.append("\r\n");
-    if(mBody!=""){
-        Buffer.append(mBody);
+    if(Body != ""){
+        Buffer.append(Body);
     }
 }
 
@@ -52,7 +52,7 @@ void HttpResponse::appendToBuffer(FixedBuffer &Buffer) {
 FileSystem::FILE_STATE HttpResponse::openFile(const StringPiece &path) {
     FileSystem::FILE_STATE ret = mFile.Open(path);
     if (ret == FileSystem::FILE_STATE::IS_FILE) {
-        mContentLength = mFile.getLength();
+        ContentLength = mFile.getLength();
     }else if(ret == FileSystem::FILE_STATE::CANNOT_ACCESS){
         mStatusCode = CLIENT_ERROR_FORBIDDEN;
     }else if(ret == FileSystem::FILE_STATE::NO_FILE){

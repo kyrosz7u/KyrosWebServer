@@ -20,7 +20,7 @@ char httprequest0[]="GET /index.html HTTP/1.1\r\n"
                     "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.4 Safari/605.1.15\r\n"
                     "Accept-Language: zh-CN,zh-Hans;q=0.9\r\n"
                     "Accept-Encoding: gzip, deflate\r\n"
-                    "Connection: keep-alive\r\n\r\n";
+                    "Connection: keep-isAlive\r\n\r\n";
 
 
 char httprequest1[]="GET /index.html HTTP/1.";
@@ -31,7 +31,7 @@ char httprequest3[]= "Host: 127.0.0.1";
 
 char httprequest4[]="\r\n"
                     "Accept-Encoding: gzip, deflate\r\n"
-                    "Connection: keep-alive\r\n";
+                    "Connection: keep-isAlive\r\n";
 
 char httprequest5[]="\r\n";
 
@@ -73,7 +73,7 @@ TEST(HttpTest, RequestWithoutBody){
     EXPECT_EQ(req.version,"HTTP/1.1");
     EXPECT_EQ(req.host,"127.0.0.1");
     EXPECT_EQ(req.contentLength,0);
-    EXPECT_EQ(req.linger,true);
+    EXPECT_EQ(req.isAlive, true);
 
 }
 
@@ -86,7 +86,7 @@ char httprequest13[]= "Host: 127.0.0.1";
 char httprequest14[]="\r\n"
                     "Accept-Encoding: gzip, deflate\r\n"
                     "Content-length: 17\r\n"
-                    "Connection: keep-alive\r\n";
+                    "Connection: keep-isAlive\r\n";
 
 char httprequest15[]="\r\n";
 
@@ -132,7 +132,7 @@ TEST(HttpTest, RequestWithBody){
     EXPECT_EQ(req.version,"HTTP/1.1");
     EXPECT_EQ(req.host,"127.0.0.1");
     EXPECT_EQ(req.contentLength,17);
-    EXPECT_EQ(req.linger,true);
+    EXPECT_EQ(req.isAlive, true);
     EXPECT_EQ(req.body, "Hello Http World");
 
     LOG_INFO << req.body;

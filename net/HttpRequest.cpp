@@ -166,10 +166,10 @@ HTTP_CODE HttpRequest::parseHeader(char* text)
     else if(strncasecmp(checkptr, "Connection:", 11) == 0){
         checkptr+=11;
         checkptr+=strspn(checkptr, " \t");
-        if(strcasecmp(checkptr, "keep-alive") == 0){
-            linger= true;
+        if(strcasecmp(checkptr, "keep-isAlive") == 0){
+            isAlive= true;
         }else{
-            linger= false;
+            isAlive= false;
         }
         return NO_REQUEST;
     }
@@ -187,7 +187,7 @@ HTTP_CODE HttpRequest::parseHeader(char* text)
         return NO_REQUEST;
     }
     else{
-        LOG_INFO << "oop!unknow header: " << checkptr;
+        LOG_DEBUG << "oop!unknow header: " << checkptr;
     }
     return NO_REQUEST;
 }

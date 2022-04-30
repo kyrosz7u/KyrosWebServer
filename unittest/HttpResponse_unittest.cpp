@@ -13,7 +13,7 @@ using namespace base;
 using namespace net::http;
 
 char httpResponse0[]="HTTP/1.1 200 OK\r\n"
-                    "Connection: keep-alive\r\n"
+                    "Connection: keep-isAlive\r\n"
                     "Content-Length: 10\r\n"
                     "Accept-Ranges: bytes\r\n"
                     "Cache-Control: no-cache\r\n"
@@ -28,7 +28,7 @@ TEST(HttpTest, RequestWithBody){
     resp.setStatusCode(HttpResponse::SUCCESS_OK);
     resp.setHeader("Accept-Ranges","bytes");
     resp.setHeader("Cache-Control","no-cache");
-    resp.mAlive= true;
+    resp.isAlive= true;
     resp.setContentLength(10);
     resp.setContentType("text/html");
     resp.setHeader("Date","Mon, 25 Apr 2022 08:35:51 GMT");
