@@ -1,4 +1,5 @@
 # KyrosWebServer
+网络部分的代码总结成了网络库，见https://github.com/kyrosz7u/knpnl
 
 ## 概要
 
